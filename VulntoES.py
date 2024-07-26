@@ -8,6 +8,7 @@ import re
 import json
 import time
 import getopt
+import hashlib
 import xml.etree.ElementTree as xml
 
 
@@ -18,7 +19,7 @@ class NmapES:
 		self.input_file = input_file
 		self.tree = self.__importXML()
 		self.root = self.tree.getroot()
-		self.es = Elasticsearch([{'host':es_ip,'port':es_port}])
+		self.es = Elasticsearch([f'http://{es_ip}:{es_port}'])
 		self.index_name = index_name
 
 	def displayInputFileName(self):
@@ -45,18 +46,18 @@ class NmapES:
 						dict_item['mac'] = c.attrib['addr']
 
 				elif c.tag == 'hostnames':
-					for names in c.getchildren():
+					for names in list(c):
 						if names.attrib['name']:
 							dict_item['hostname'] = names.attrib['name']
 
 				elif c.tag == 'ports':
-					for port in c.getchildren():
+					for port in list(c):
 						dict_item_ports = {}
 						if port.tag == 'port':
 							# print(port.tag, port.attrib)
 							dict_item_ports['port'] = port.attrib['portid']
 							dict_item_ports['protocol'] = port.attrib['protocol']
-							for p in port.getchildren():
+							for p in list(port):
 								if p.tag == 'state':
 									dict_item_ports['state'] = p.attrib['state']
 								elif p.tag == 'service':
@@ -78,7 +79,17 @@ class NmapES:
 													
 							to_upload = merge_two_dicts(dict_item, dict_item_ports)	
 							if to_upload['state'] == 'open':
-								self.es.index(index=self.index_name, doc_type="vuln", body=json.dumps(to_upload))
+								self.es.index(index=self.index_name, id=calc_id(to_upload), document=json.dumps(to_upload))
+
+def calc_id(item):
+	#{'scanner': 'nmap', 'time': '2024/07/26 16:50:12', 'ip': '177.154.191.218', 'hostname': 'br.odin7080.com.br', 'port': '465', 'protocol': 'tcp', 'state': 'open', 'service': 'smtp', 'product_name': 'Exim smtpd', 'product_version': '4.95', 'scripts': {'ssl-cert': 'Subject: commonName=br.odin7080.com.br\nSubject Alternative Name: DNS:br.odin7080.com.br\nIssuer: commonName=cPanel, Inc. Certification Authority/organizationName=cPanel, Inc./stateOrProvinceName=TX/countryName=US\nPublic Key type: rsa\nPublic Key bits: 2048\nSignature Algorithm: sha256WithRSAEncryption\nNot valid before: 2024-07-25T00:00:00\nNot valid after:  2024-10-23T23:59:59\nMD5:   17fb:3443:93bc:46c3:c39e:419d:a06b:9356\nSHA-1: 854c:465b:60a3:f4f2:4577:8f99:bfc4:360e:0b3e:8c16', 'smtp-commands': 'SMTP EHLO br.odin7080.com.br: failed to receive data: failed to receive data', 'ssl-date': 'TLS randomness does not represent time'}}
+	sha1sum = hashlib.sha1()
+	sha1sum.update(json.dumps({
+			k: v
+			for k, v in item.items()
+			if k in ["ip", "port", "protocol", "state"]
+		}).encode("UTF-8"))
+	return sha1sum.hexdigest()
 
 def merge_two_dicts(x, y):
     z = x.copy()   # start with x's keys and values
