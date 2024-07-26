@@ -82,7 +82,6 @@ class NmapES:
 								self.es.index(index=self.index_name, id=calc_id(to_upload), document=json.dumps(to_upload))
 
 def calc_id(item):
-	#{'scanner': 'nmap', 'time': '2024/07/26 16:50:12', 'ip': '177.154.191.218', 'hostname': 'br.odin7080.com.br', 'port': '465', 'protocol': 'tcp', 'state': 'open', 'service': 'smtp', 'product_name': 'Exim smtpd', 'product_version': '4.95', 'scripts': {'ssl-cert': 'Subject: commonName=br.odin7080.com.br\nSubject Alternative Name: DNS:br.odin7080.com.br\nIssuer: commonName=cPanel, Inc. Certification Authority/organizationName=cPanel, Inc./stateOrProvinceName=TX/countryName=US\nPublic Key type: rsa\nPublic Key bits: 2048\nSignature Algorithm: sha256WithRSAEncryption\nNot valid before: 2024-07-25T00:00:00\nNot valid after:  2024-10-23T23:59:59\nMD5:   17fb:3443:93bc:46c3:c39e:419d:a06b:9356\nSHA-1: 854c:465b:60a3:f4f2:4577:8f99:bfc4:360e:0b3e:8c16', 'smtp-commands': 'SMTP EHLO br.odin7080.com.br: failed to receive data: failed to receive data', 'ssl-date': 'TLS randomness does not represent time'}}
 	sha1sum = hashlib.sha1()
 	sha1sum.update(json.dumps({
 			k: v
