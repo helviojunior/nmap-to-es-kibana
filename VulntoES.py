@@ -87,7 +87,7 @@ def calc_id(item):
 			k: v
 			for k, v in item.items()
 			if k in ["ip", "port", "protocol", "state"]
-		}).encode("UTF-8"))
+		}, sort_keys=True).encode("UTF-8"))
 	return sha1sum.hexdigest()
 
 def merge_two_dicts(x, y):
